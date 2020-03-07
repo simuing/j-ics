@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AssetManagementComponent } from './asset-management.component';
+import { AssetsWriteComponent } from './assets-write.component';
 
-describe('AssetManagementComponent', () => {
-  let component: AssetManagementComponent;
-  let fixture: ComponentFixture<AssetManagementComponent>;
+describe('AssetsWriteComponent', () => {
+  let component: AssetsWriteComponent;
+  let fixture: ComponentFixture<AssetsWriteComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ AssetManagementComponent ]
+      declarations: [ AssetsWriteComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AssetManagementComponent);
+    fixture = TestBed.createComponent(AssetsWriteComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
