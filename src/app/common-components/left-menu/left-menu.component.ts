@@ -11,8 +11,15 @@ import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree'
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CommonService } from '../../services/common.service';
 
-const LOAD_MORE = 'LOAD_MORE';
-type menuData = {menuKey: number, menuName: string, label: string};
+// const LOAD_MORE = 'LOAD_MORE'; //기존
+const LOAD_MORE = {menuKey: 0, menuCode:'LOAD_MORE', label: 'more'} //변경
+
+/* 
+ * menuKey: 메뉴번호 
+ * menuCode: 메뉴
+ * label: 메뉴명
+ */
+type menuData = {menuKey: number, menuCode: string, label: string};
 
 /** Nested node */
 export class LoadmoreNode {
@@ -50,7 +57,7 @@ export class LoadmoreDatabase {
   dataChange = new BehaviorSubject<LoadmoreNode[]>([]);
   nodeMap = new Map<menuData, LoadmoreNode>();
 
-  /** The data */
+  /** 기존 데이터 */
   // rootLevelNodes: string[] = ['Vegetables', 'Fruits'];
   // dataMap = new Map<string, string[]>([
   //   ['Fruits', ['Apple', 'Orange', 'Banana']],
@@ -59,18 +66,28 @@ export class LoadmoreDatabase {
   //   ['Onion', ['Yellow', 'White', 'Purple', 'Green', 'Shallot', 'Sweet', 'Red', 'Leek']],
   // ]);
 
-  /* 데이터교체 */
+  /* rootLevelNodes 데이터교체 */
   menuParent: Array<menuData> = [
-    {menuKey: 1, menuName:'mypage', label:'마이페이지'}, 
-    {menuKey: 2, menuName:'assets-management', label:'비품관리'}
+    {menuKey: 1, menuCode:'mypage', label:'마이페이지'}, 
+    {menuKey: 2, menuCode:'assets-management', label:'비품관리2'}
   ];
+
+  /* dataMap 데이터교체 */
   menuChildren = new Map<menuData, Array<menuData>>([
+    /* 첫번째 메뉴 */
     [
-      /* 첫번째 메뉴 */
-      {menuKey: 2, menuName:'assets-management', label: '비품관리'},
+      {menuKey: 1, menuCode:'assets-management', label: '비품관리1'},
       [
-        {menuKey: 21, menuName:'assets-management', label: '비품목록'}, 
-        {menuKey: 22, menuName:'assets-management', label: '비품등록'}
+        {menuKey: 11, menuCode:'assets-list1', label: '비품목록1'}, 
+        {menuKey: 12, menuCode:'assets-write', label: '비품등록1'}
+      ]
+    ],
+    /* 두번째 메뉴 */
+    [
+      {menuKey: 2, menuCode:'assets-management', label: '비품관리2'},
+      [
+        {menuKey: 21, menuCode:'assets-management', label: '비품목록2'}, 
+        {menuKey: 22, menuCode:'assets-management', label: '비품등록2'}
       ]
     ]
   ]);
@@ -87,6 +104,7 @@ export class LoadmoreDatabase {
 
   /** Expand a node whose children are not loaded */
   loadMore(menu: menuData, onlyFirstTime = false) {
+    debugger;
     if (!this.nodeMap.has(menu) || !this.menuChildren.has(menu)) {
       return;
     }
@@ -100,7 +118,7 @@ export class LoadmoreDatabase {
       .map(name => this._generateNode(name));
     if (newChildrenNumber < children.length) {
       // Need a new load more node
-      let LOAD_MORE = {menuKey: 21, menuName:'LOAD_MORE', label: '비품목록'}
+      let LOAD_MORE = {menuKey: 0, menuCode:'LOAD_MORE', label: '비품목록'}
       nodes.push(new LoadmoreNode(LOAD_MORE, false, menu));
     }
 
@@ -109,6 +127,7 @@ export class LoadmoreDatabase {
   }
 
   private _generateNode(menu: menuData): LoadmoreNode {
+    debugger;
     if (this.nodeMap.has(menu)) {
       return this.nodeMap.get(menu)!;
     }
@@ -210,8 +229,8 @@ export class LeftMenuComponent implements OnInit {
 
   hasChild = (_: number, _nodeData: LoadmoreFlatNode) => _nodeData.expandable;
 
-  isLoadMore = (_: number, _nodeData: LoadmoreFlatNode) => false;
-  // isLoadMore = (_: number, _nodeData: LoadmoreFlatNode) => _nodeData.menu === LOAD_MORE;
+  // isLoadMore = (_: number, _nodeData: LoadmoreFlatNode) => true;
+  isLoadMore = (_: number, _nodeData: LoadmoreFlatNode) => _nodeData.menu == LOAD_MORE;
 
   /** Load more nodes from data source */
   loadMore(menu: menuData) {
@@ -230,7 +249,6 @@ export class LeftMenuComponent implements OnInit {
       if(this.commonService.leftMenuOpenFlag){
         this.removeBgShadow();
       } else {
-        this._tree.nativeElement.style.left = '0px'
         this.showBgShadow();
       }
     });
@@ -240,6 +258,7 @@ export class LeftMenuComponent implements OnInit {
    * @description 배경 음영처리
    */
   showBgShadow() {
+    this._tree.nativeElement.style.left = '0px'
     this._bgShadow.nativeElement.style.display = 'block'
     this._bgShadow.nativeElement.style.opacity = '1'
     this.commonService.leftMenuOpenFlag = true;
