@@ -10,16 +10,17 @@ import { Component, OnInit, Injectable, ViewChild, ElementRef, Inject } from '@a
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CommonService } from '../../services/common.service';
+import { Router } from '@angular/router';
 
 // const LOAD_MORE = 'LOAD_MORE'; //기존
-const LOAD_MORE = {menuKey: 0, menuCode:'LOAD_MORE', label: 'more'} //변경
+const LOAD_MORE = {idx: '0', menuPath:'LOAD_MORE', label: 'more'} //변경
 
 /* 
- * menuKey: 메뉴번호 
+ * idx: 메뉴번호 
  * menuCode: 메뉴
  * label: 메뉴명
  */
-type menuData = {menuKey: number, menuCode: string, label: string};
+type menuData = {idx: string, menuPath: string, label: string};
 
 /** Nested node */
 export class LoadmoreNode {
@@ -30,20 +31,21 @@ export class LoadmoreNode {
   }
 
   constructor(
+    public idx: string,
     public menu: menuData,
     public hasChildren = false,
-    public loadMoreParentMenu: menuData | null = null
+    public loadMoreParentMenu: string | null = null
     ) { }
 }
 
 /** Flat node with expandable and level information */
 export class LoadmoreFlatNode {
   constructor(
-    // public menuKey: number,//jey 추가
+    public idx: string,
     public menu: menuData,
     public level = 1,
     public expandable = false,
-    public loadMoreParentMenu: menuData | null = null
+    public loadMoreParentMenu: string | null = null
     ) { }
 }
 
@@ -55,7 +57,7 @@ export class LoadmoreFlatNode {
 export class LoadmoreDatabase {
   batchNumber = 5;
   dataChange = new BehaviorSubject<LoadmoreNode[]>([]);
-  nodeMap = new Map<menuData, LoadmoreNode>();
+  nodeMap = new Map<string, LoadmoreNode>();
 
   /** 기존 데이터 */
   // rootLevelNodes: string[] = ['Vegetables', 'Fruits'];
@@ -68,28 +70,38 @@ export class LoadmoreDatabase {
 
   /* rootLevelNodes 데이터교체 */
   menuParent: Array<menuData> = [
-    {menuKey: 1, menuCode:'mypage', label:'마이페이지'}, 
-    {menuKey: 2, menuCode:'assets-management', label:'비품관리2'}
+    {idx: '1', menuPath:'company-management/assets-management', label:'비품관리'}, 
+    {idx: '2', menuPath:'company-management/library-management', label:'도서관리'},
+    {idx: '3', menuPath:'company-management/employee-management', label:'사원관리'},
+    {idx: '4', menuPath:'company-management/document-management', label:'서류관리'},
+    {idx: '5', menuPath:'company-management/mypage', label:'My page'}
   ];
 
   /* dataMap 데이터교체 */
-  menuChildren = new Map<menuData, Array<menuData>>([
+  menuChildren = new Map<string, Array<menuData>>([
     /* 첫번째 메뉴 */
-    [
-      {menuKey: 1, menuCode:'assets-management', label: '비품관리1'},
+    [ '1',
       [
-        {menuKey: 11, menuCode:'assets-list1', label: '비품목록1'}, 
-        {menuKey: 12, menuCode:'assets-write', label: '비품등록1'}
+        {idx: '1-1', menuPath:'company-management/assets-list', label: '비품목록'}, 
+        {idx: '1-2', menuPath:'company-management/assets-write', label: '비품등록'},
+        {idx: '1-3', menuPath:'company-management/assets-location', label: '비품위치'}
       ]
     ],
     /* 두번째 메뉴 */
-    [
-      {menuKey: 2, menuCode:'assets-management', label: '비품관리2'},
+    [ '2',
       [
-        {menuKey: 21, menuCode:'assets-management', label: '비품목록2'}, 
-        {menuKey: 22, menuCode:'assets-management', label: '비품등록2'}
+        {idx: '2-1', menuPath:'company-management/library-list', label: '도서목록'}, 
+        {idx: '2-2', menuPath:'company-management/library-write', label: '도서등록'}
+      ]
+    ],
+    /* 네번째 메뉴 */
+    [ '4',
+      [
+        {idx: '4-1', menuPath:'company-management/document-form', label: '서류양식'}
       ]
     ]
+    /* menuChildren 하위 menuChildren 가능 */
+    // '1-1' ..
   ]);
 
   initialize() {
@@ -98,13 +110,12 @@ export class LoadmoreDatabase {
     // this.dataChange.next(data);
 
     //은영코드
-    const data = this.menuParent.map(parent => this._generateNode(parent));
+    const data = this.menuParent.map(parent => this._generateNode(parent.idx, 'parent'));
     this.dataChange.next(data);
   }
 
   /** Expand a node whose children are not loaded */
-  loadMore(menu: menuData, onlyFirstTime = false) {
-    debugger;
+  loadMore(menu: string, onlyFirstTime = false) {
     if (!this.nodeMap.has(menu) || !this.menuChildren.has(menu)) {
       return;
     }
@@ -114,59 +125,62 @@ export class LoadmoreDatabase {
       return;
     }
     const newChildrenNumber = parent.children!.length + this.batchNumber;
-    const nodes = children.slice(0, newChildrenNumber)
-      .map(name => this._generateNode(name));
+    const nodes = children.slice(0, newChildrenNumber).map(child => this._generateNode(child.idx, 'child'));
+    
     if (newChildrenNumber < children.length) {
       // Need a new load more node
-      let LOAD_MORE = {menuKey: 0, menuCode:'LOAD_MORE', label: '비품목록'}
-      nodes.push(new LoadmoreNode(LOAD_MORE, false, menu));
+      let LOAD_MORE = {idx: '0', menuPath:'LOAD_MORE', label: '비품목록'}
+      nodes.push(new LoadmoreNode('LOAD_MORE', LOAD_MORE, false, menu));
     }
 
     parent.childrenChange.next(nodes);
     this.dataChange.next(this.dataChange.value);
   }
 
-  private _generateNode(menu: menuData): LoadmoreNode {
-    debugger;
-    if (this.nodeMap.has(menu)) {
-      return this.nodeMap.get(menu)!;
+  /**
+   * @description 상위 메뉴 연결
+   * @param menu 
+   */
+  private _generateNode(idx: string, type: string): LoadmoreNode {
+    let menuData = null;
+    let entries = null;
+    let size = 0;
+
+    //이미 존재하는 메뉴면 반환(으로 추정, 기존소스)
+    if (this.nodeMap.has(idx)) {
+      return this.nodeMap.get(idx)!;
     }
-    const result = new LoadmoreNode(menu, this.menuChildren.has(menu));
-    this.nodeMap.set(menu, result);
+
+    //추가 소스, 메뉴 노드 반환
+    if (type=='parent') {
+      entries = this.menuParent;
+      size = this.menuParent.length;
+
+      if(entries.find(menu=>menu.idx==idx)){
+        menuData = entries.find(menu=>menu.idx==idx)
+      }
+
+    } else if (type=='child') {
+      entries = this.menuChildren.entries();
+      size = this.menuChildren.size;
+
+      for(let i=0; i<size; i++) {
+        let node = entries.next().value;
+        
+        if(node) {
+          if(node[1].find(menu=>menu.idx==idx)){
+            menuData = node[1].find(menu=>menu.idx==idx)
+          }
+        }
+      }
+    }
+
+    
+    const result = new LoadmoreNode(idx, menuData, this.menuChildren.has(idx));
+    this.nodeMap.set(idx, result);
     return result;
   }
 }
-//org
-//   loadMore(item: string, onlyFirstTime = false) {
-//     if (!this.nodeMap.has(item) || !this.menuChildren.has(item)) {
-//       return;
-//     }
-//     const parent = this.nodeMap.get(item)!;
-//     const children = this.menuChildren.get(item)!;
-//     if (onlyFirstTime && parent.children!.length > 0) {
-//       return;
-//     }
-//     const newChildrenNumber = parent.children!.length + this.batchNumber;
-//     const nodes = children.slice(0, newChildrenNumber)
-//       .map(name => this._generateNode(name));
-//     if (newChildrenNumber < children.length) {
-//       // Need a new load more node
-//       nodes.push(new LoadmoreNode(LOAD_MORE, false, item));
-//     }
-
-//     parent.childrenChange.next(nodes);
-//     this.dataChange.next(this.dataChange.value);
-//   }
-
-//   private _generateNode(item: string): LoadmoreNode {
-//     if (this.nodeMap.has(item)) {
-//       return this.nodeMap.get(item)!;
-//     }
-//     const result = new LoadmoreNode(item, this.menuChildren.has(item));
-//     this.nodeMap.set(item, result);
-//     return result;
-//   }
-// }
 
 @Component({
   selector: 'app-left-menu',
@@ -178,7 +192,7 @@ export class LeftMenuComponent implements OnInit {
   @ViewChild('_tree', { static: false }) _tree: ElementRef;
   @ViewChild('_bgShadow', { static: false }) _bgShadow: ElementRef;
 
-  nodeMap = new Map<menuData, LoadmoreFlatNode>();
+  nodeMap = new Map<string, LoadmoreFlatNode>();
   treeControl: FlatTreeControl<LoadmoreFlatNode>;
   treeFlattener: MatTreeFlattener<LoadmoreNode, LoadmoreFlatNode>;
   // Flat tree data source
@@ -187,8 +201,9 @@ export class LeftMenuComponent implements OnInit {
   public st = null;
 
   constructor(
+    @Inject(CommonService) private commonService: CommonService,
     private _database: LoadmoreDatabase,
-    @Inject(CommonService) private commonService: CommonService
+    private router: Router
   ) {
     this.treeFlattener = new MatTreeFlattener(this.transformer, this.getLevel,
       this.isExpandable, this.getChildren);
@@ -209,19 +224,19 @@ export class LeftMenuComponent implements OnInit {
   getChildren = (node: LoadmoreNode): Observable<LoadmoreNode[]> => node.childrenChange;
 
   transformer = (node: LoadmoreNode, level: number) => {
-    const existingNode = this.nodeMap.get(node.menu);
+    const existingNode = this.nodeMap.get(node.idx);
 
     if (existingNode) {
       return existingNode;
     }
 
     const newNode =
-      new LoadmoreFlatNode(node.menu, level, node.hasChildren, node.loadMoreParentMenu);
-    this.nodeMap.set(node.menu, newNode);
+      new LoadmoreFlatNode(node.idx, node.menu, level, node.hasChildren, node.loadMoreParentMenu);
+    this.nodeMap.set(node.idx, newNode);
     return newNode;
   }
 
-  // getMenuKey = (node: LoadmoreFlatNode) => node.menu.menuKey;
+  getMenuIdx = (node: LoadmoreFlatNode) => node.menu.idx; //메뉴 번호 반환
 
   getLevel = (node: LoadmoreFlatNode) => node.level;
 
@@ -233,12 +248,12 @@ export class LeftMenuComponent implements OnInit {
   isLoadMore = (_: number, _nodeData: LoadmoreFlatNode) => _nodeData.menu == LOAD_MORE;
 
   /** Load more nodes from data source */
-  loadMore(menu: menuData) {
+  loadMore(menu: string) {
     this._database.loadMore(menu);
   }
 
   loadChildren(node: LoadmoreFlatNode) {
-    this._database.loadMore(node.menu, true);
+    this._database.loadMore(node.idx, true);
   }
 
   /**
@@ -272,16 +287,23 @@ export class LeftMenuComponent implements OnInit {
     this._bgShadow.nativeElement.style.opacity = '0'
     this._bgShadow.nativeElement.style.display = 'none'
     this.commonService.leftMenuOpenFlag = false;
-
-    //딜레이로 인한 오류가 생겨 삭제
-    // this.st = setTimeout(() => {
-    //   this._bgShadow.nativeElement.style.display = 'none'
-    //   clearTimeout(this.st);
-    // }, 500);
   }
 
-  logNode(node){
-    console.log(node)
-    // console.log(this.getMenuKey(node))
+  /**
+   * @description 메뉴이동
+   * @param node 
+   */
+  goMenu(node: LoadmoreNode) {
+    if(node.idx!='0' && node.menu.menuPath) {
+      this.router.navigate(['/'+node.menu.menuPath])
+      .catch(err=>{
+        console.error(err);
+
+        alert('준비중입니다.')
+      })
+      .finally(()=>{
+        this.removeBgShadow();
+      });
+    }
   }
 }

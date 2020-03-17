@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
 import { LeftMenuComponent } from './left-menu/left-menu.component';
-import { AngularMaterialAllModule } from '../angular-material-all/angular-material-all.module';
+import { AngularMaterialAllModule } from '../modules/angular-material-all.module';
 
 
 @NgModule({

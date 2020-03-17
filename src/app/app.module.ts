@@ -4,12 +4,12 @@ import { NgModule } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CommonService } from './services/common.service';
+import { CommonService } from './common/services/common.service';
 
-import { CommonComponentsModule } from './common-components/common-components.module';
+import { CommonComponentsModule } from './common/components/common-components.module';
 import { CompanyManagementModule } from './company-management/company-management.module'
 
-import { AngularMaterialAllModule } from './angular-material-all/angular-material-all.module';
+import { AngularMaterialAllModule } from './common/modules/angular-material-all.module';
 
 @NgModule({
   declarations: [
