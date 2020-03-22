@@ -1,10 +1,3 @@
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, OnInit, Injectable, ViewChild, ElementRef, Inject } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
@@ -70,34 +63,35 @@ export class LoadmoreDatabase {
 
   /* rootLevelNodes 데이터교체 */
   menuParent: Array<menuData> = [
-    {idx: '1', menuPath:'company-management/assets-management', label:'비품관리'}, 
-    {idx: '2', menuPath:'company-management/library-management', label:'도서관리'},
-    {idx: '3', menuPath:'company-management/employee-management', label:'사원관리'},
-    {idx: '4', menuPath:'company-management/document-management', label:'서류관리'},
-    {idx: '5', menuPath:'company-management/mypage', label:'My page'}
+    {idx: 'dashboard', menuPath:'dashboard', label:'대시보드'}, 
+    {idx: 'assets-management', menuPath:'/company-management/assets-management', label:'비품관리'}, 
+    {idx: 'library-management', menuPath:'/company-management/library-management', label:'도서관리'},
+    {idx: 'employee-management', menuPath:'/company-management/employee-management', label:'사원관리'},
+    {idx: 'document-management', menuPath:'/company-management/document-management', label:'서류관리'},
+    {idx: 'mypage', menuPath:'company-management/mypage', label:'My page'}
   ];
 
   /* dataMap 데이터교체 */
   menuChildren = new Map<string, Array<menuData>>([
     /* 첫번째 메뉴 */
-    [ '1',
+    [ 'assets-management',
       [
-        {idx: '1-1', menuPath:'company-management/assets-list', label: '비품목록'}, 
-        {idx: '1-2', menuPath:'company-management/assets-write', label: '비품등록'},
-        {idx: '1-3', menuPath:'company-management/assets-location', label: '비품위치'}
+        {idx: 'assets-list', menuPath:'/company-management/assets-list', label: '비품목록'}, 
+        {idx: 'assets-write', menuPath:'/company-management/assets-write', label: '비품등록'},
+        {idx: 'assets-location', menuPath:'/company-management/assets-location', label: '비품위치'}
       ]
     ],
     /* 두번째 메뉴 */
-    [ '2',
+    [ 'library-management',
       [
-        {idx: '2-1', menuPath:'company-management/library-list', label: '도서목록'}, 
-        {idx: '2-2', menuPath:'company-management/library-write', label: '도서등록'}
+        {idx: 'library-list', menuPath:'/company-management/library-list', label: '도서목록'}, 
+        {idx: 'library-write', menuPath:'/company-management/library-write', label: '도서등록'}
       ]
     ],
     /* 네번째 메뉴 */
-    [ '4',
+    [ 'document-management',
       [
-        {idx: '4-1', menuPath:'company-management/document-form', label: '서류양식'}
+        {idx: 'document-form', menuPath:'/company-management/document-form', label: '서류양식'}
       ]
     ]
     /* menuChildren 하위 menuChildren 가능 */
@@ -295,11 +289,11 @@ export class LeftMenuComponent implements OnInit {
    */
   goMenu(node: LoadmoreNode) {
     if(node.idx!='0' && node.menu.menuPath) {
-      this.router.navigate(['/'+node.menu.menuPath])
+      this.router.navigate([node.menu.menuPath])
       .catch(err=>{
         console.error(err);
 
-        alert('준비중입니다.')
+        alert('준비중입니다.');
       })
       .finally(()=>{
         this.removeBgShadow();

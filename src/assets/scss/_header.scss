@@ -1,6 +1,6 @@
 app-header {
     display: flex;
-    padding: 15px;
+    padding: 20px;
     // width: 100%;
     min-height: 20px;
     background-image: url(/assets/img/header.png);
@@ -10,10 +10,15 @@ app-header {
     box-shadow: 0px 0px 5px 2px gainsboro;
 }
 
+#j-header-menu-list {
+    position: absolute; 
+    top: 10px;
+    right: 10px;
 
-#j-header-menu {
-    color: white;
-    &>:focus {
-        border: none;
+    button#j-header-menu {
+        color: white;
+        &>:focus {
+            border: none;
+        }
     }
 }
